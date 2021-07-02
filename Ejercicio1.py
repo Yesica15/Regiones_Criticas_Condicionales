@@ -1,3 +1,4 @@
+from regionCondicional import Recurso, RegionCondicional
 import threading
 import logging
 import random
@@ -5,26 +6,45 @@ import time
 
 logging.basicConfig(format='%(asctime)s.%(msecs)03d [%(threadName)s] - %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
 
+class RecursoDato(Recurso):
+    dato1 = 0
+    numLectores = 0
 
-dato1 = 0
-numLectores = 0
+recursoDato1 = RecursoDato()
+
+def condicionLector():
+    return True
+
+def condicionEscritor():
+    return regionEscritor.recurso.numLectores == 0
+
+regionEscritor = RegionCondicional(recursoDato1,condicionEscritor)
+regionLector = RegionCondicional(recursoDato1,condicionLector)
+
+@regionEscritor.condicion
+def escribir():
+    regionEscritor.recurso.dato1 = random.randint(0,100)
+    logging.info(f'Escritor escribe dato1 = {regionEscritor.recurso.dato1}')
+
+@regionLector.condicion
+def sumarLector():
+    regionLector.recurso.numLectores += 1
+
+@regionLector.condicion
+def restarLector():
+    regionLector.recurso.numLectores -=1
 
 def Lector():
-    global numLectores
-    global dato1
     while True:
-        numLectores += 1
-        logging.info(f'Lector lee dato1 = {dato1}')
+        sumarLector()
+        logging.info(f'Lector lee dato1 = {regionLector.recurso.dato1}')
         time.sleep(1)
-        numLectores -= 1
+        restarLector()
         time.sleep(random.randint(3,6))
 
 def Escritor():
-    global dato1
     while True:
-        if numLectores == 0:
-            dato1 = random.randint(0,100)
-            logging.info(f'Escritor escribe dato1 = {dato1}')
+        escribir()
         time.sleep(random.randint(1,4))
 
 
